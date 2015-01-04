@@ -1,0 +1,5 @@
+<ul class="nav nav-sidebar">
+  {#list menus as menu}
+    <li class={state.is(menu.state)?'active':''}><a href="#!{menu.url}">{menu.name}</a></li>
+  {/list}
+</ul>
