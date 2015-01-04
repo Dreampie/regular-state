@@ -1,0 +1,17 @@
+{
+  "name": "requirejs-regular",
+  "version": "0.3.0-pre",
+  "main": "rgl.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "components",
+    "tmp",
+    "test",
+    "package.json"
+  ],
+  "devDependencies": {
+    "regularjs": "regularjs/regular#master",
+    "requirejs-text": "2.0.12"
+  }
+}
