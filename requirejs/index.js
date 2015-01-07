@@ -3,7 +3,7 @@ require.config({
     paths : {
         "rgl": '../bower_components/requirejs-regular/rgl',
         "regularjs": '../bower_components/regularjs/dist/regular',
-        "restate": 'https://rawgit.com/regularjs/regular-state/master/restate',
+        "restate": '../restate',
         "stateman": '../bower_components/stateman/stateman'
     },
     rgl: {
@@ -20,41 +20,101 @@ require([
   "./module/blog.js",
   "./module/chat.js",
   "rgl!./module/index.html",
-  // "./module/blog.list.js",
-  // "./module/blog.tag.js",
-  // "./module/blog.category.js",
-  // "./module/user.js",
+  "./module/user.js",
+  "./module/blog.detail.js",
+  "./module/blog.list.js",
+  "./module/blog.edit.js"
 ], function(
     restate,
     Regular,
     Application,
     Blog,
     Chat,
-    Index
-    // BlogDetail,
-    // BlogList,
-    // BlogTag,
-    // BlogCategory,
-    // User
+    Index,
+    User,
+    BlogDetail,
+    BlogList,
+    BlogEdit
   ){
 
-  var stateman = restate({view: document.getElementById("#app"), Component: Regular});
+
+  var format = function(){
+    function fix(str){
+      str = "" + (str || "");
+      return str.length <= 1? "0" + str : str;
+    }
+    var maps = {
+      'yyyy': function(date){return date.getFullYear()},
+      'MM': function(date){return fix(date.getMonth() + 1); },
+      'dd': function(date){ return fix(date.getDate()) },
+      'HH': function(date){ return fix(date.getHours()) },
+      'mm': function(date){ return fix(date.getMinutes())}
+    }
+
+    var trunk = new RegExp(Object.keys(maps).join('|'),'g');
+    return function(value, format){
+      format = format || "yyyy-MM-dd HH:mm";
+      value = new Date(value);
+
+      return format.replace(trunk, function(capture){
+        return maps[capture]? maps[capture](value): "";
+      });
+    }
+  }();
+
+  Regular.filter("format", format)
+
+
+
+  // Start Stateman.
+
+  var stateman = restate({
+    view: document.getElementById("#app"), 
+    Component: Regular
+  });
+
+  // store infomation in 
+  try{
+      var username = localStorage.getItem("username");
+      if(username) stateman.user = {name: username, id: -1}
+  }catch(e){}
 
 
   stateman
+    // application core
     .state("app", Application, "")
+
+    // home page
     .state("app.index", Index, { url: ""})
+
+    // blog
     .state("app.blog", Blog)
+    .state("app.blog.detail", BlogDetail, ":id/detail")
+    .state("app.blog.list", BlogList, "")
+    .state("app.blog.edit", BlogEdit, ":id/edit")
+
+    //chat 
     .state("app.chat", Chat)
-    // .state("app.blog.detail", BlogDetail)
-    // .state("app.blog.list", BlogList)
-    // .state("app.blog.tag", BlogTag)
-    // .state("app.blog.category", BlogCategory)
-    // .state("app.user", User)
+
+    // user
+    .state("app.user", User, "user/:uid")
+
+    // redirect when notfound
     .on("notfound", function(){
       this.go("app.index", {replace: true})
     })
-    .start({ prefix: "!" })
+
+    // authen, need login first
+    .on("begin", function(option){
+      if(option.current.name !== "app.index" && !this.user){
+        option.stop();
+        this.go("app.index", {replace: true})
+        alert("You need Login first")
+      } 
+    })
+
+    // start the routing
+    .start({html5:false, prefix: "!"})
 
 
 
